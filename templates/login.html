@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Sign In | Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-5">
+  <div class="col-12 col-sm-9 col-md-7 col-lg-5 col-xl-4">
+
+    <div class="text-center mb-4">
+      <span class="display-6 text-info"><i class="fa-solid fa-shield-halved"></i></span>
+      <h3 class="fw-bold brand-font text-light mt-2 mb-0">SENTINEL ACCESS</h3>
+      <p class="text-secondary small font-monospace">Authorized Personnel Only</p>
+    </div>
+
+    <div class="card border-secondary border-opacity-50 shadow-lg" style="background:#0d1117;">
+      <div class="card-body p-4">
+
+        <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" novalidate>
+
+          <div class="mb-3">
+            <label for="username" class="form-label text-light small fw-semibold">
+              <i class="fa-solid fa-user me-1 text-info"></i>Username
+            </label>
+            <input type="text" class="form-control bg-dark border-secondary text-light font-monospace"
+                   id="username" name="username" placeholder="Enter username"
+                   required autofocus autocomplete="username">
+          </div>
+
+          <div class="mb-4">
+            <label for="password" class="form-label text-light small fw-semibold">
+              <i class="fa-solid fa-lock me-1 text-info"></i>Password
+            </label>
+            <div class="input-group">
+              <input type="password" class="form-control bg-dark border-secondary text-light font-monospace"
+                     id="password" name="password" placeholder="Enter password"
+                     required autocomplete="current-password">
+              <button class="btn btn-outline-secondary" type="button" id="togglePwd"
+                      onclick="togglePassword()" title="Show/hide password">
+                <i class="fa-solid fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-info w-100 py-2 fw-semibold text-dark">
+            <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+          </button>
+        </form>
+
+        <div class="mt-4 p-3 rounded border border-secondary border-opacity-25"
+             style="background:rgba(255,255,255,.03);">
+          <div class="small text-secondary">
+            <i class="fa-solid fa-circle-info me-1 text-info"></i>
+            <strong class="text-light">Default credentials:</strong><br>
+            Username: <code class="text-info">admin</code> &nbsp;|&nbsp;
+            Password: <code class="text-info">admin123</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer bg-transparent border-top border-secondary border-opacity-25 text-center py-3">
+        <span class="text-secondary small">
+          No account?
+          <a href="{{ url_for('auth.register') }}" class="text-info fw-semibold text-decoration-none">
+            Register here
+          </a>
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  var inp = document.getElementById('password');
+  var ico = document.getElementById('eyeIcon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    ico.className = 'fa-solid fa-eye-slash';
+  } else {
+    inp.type = 'password';
+    ico.className = 'fa-solid fa-eye';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Alerts - Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold tracking-wide brand-font text-light mb-1">
+            <i class="fa-solid fa-bell text-danger me-2"></i>ALERT DISPATCHES
+        </h4>
+        <p class="text-secondary small mb-0 font-monospace">Pushbullet Notification Records — Weapon Threat Events</p>
+    </div>
+</div>
+
+{# ── FILTER BAR ─────────────────────────────────────────────────────────── #}
+<div class="card bg-hud border-secondary border-opacity-50 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="GET" action="{{ url_for('alerts') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-secondary small text-uppercase font-monospace">Alert Status</label>
+                <select name="status" class="form-select bg-black text-white border-secondary font-monospace">
+                    <option value=""             {% if not status_filter %}selected{% endif %}>All Alerts</option>
+                    <option value="SENT"         {% if status_filter == 'SENT'           %}selected{% endif %}>Sent</option>
+                    <option value="FAILED"       {% if status_filter == 'FAILED'         %}selected{% endif %}>Failed</option>
+                    <option value="NOT_CONFIGURED" {% if status_filter == 'NOT_CONFIGURED' %}selected{% endif %}>Not Configured</option>
+                </select>
+            </div>
+            <div class="col-md-7">
+                <p class="text-secondary small mb-0 font-monospace mt-3">
+                    <i class="fa-solid fa-circle-info text-info me-1"></i>
+                    Showing Pushbullet dispatch records only.
+                    <strong>NOT_CONFIGURED</strong> means the Pushbullet token was not set when the alert fired.
+                </p>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-info w-100 text-dark fw-semibold font-monospace">
+                    <i class="fa-solid fa-filter me-1"></i>Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ── ALERTS TABLE ───────────────────────────────────────────────────────── #}
+<div class="card bg-hud border-secondary border-opacity-50 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead>
+                    <tr class="text-secondary text-uppercase small font-monospace border-bottom border-secondary">
+                        <th class="ps-3">Alert ID</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Activity</th>
+                        <th class="text-center">Threat Score</th>
+                        <th class="text-center">Threat Level</th>
+                        <th class="text-center">Pushbullet</th>
+                        <th class="text-end pe-3">Overall Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alerts %}
+                    <tr>
+                        <td class="fw-bold ps-3 font-monospace">#{{ "%05d" % a.id }}</td>
+                        <td class="font-monospace small">{{ a.date if a.date else '—' }}</td>
+                        <td class="text-secondary font-monospace small">{{ a.time if a.time else '—' }}</td>
+                        <td class="small">{{ a.activity if a.activity else '—' }}</td>
+                        <td class="text-center fw-bold font-monospace">
+                            {% if a.threat_score is not none %}
+                                {{ a.threat_score }}/100
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if a.threat_level == 'CRITICAL' %}
+                                <span class="badge bg-danger">CRITICAL</span>
+                            {% elif a.threat_level == 'HIGH' %}
+                                <span class="badge bg-warning text-dark">HIGH</span>
+                            {% elif a.threat_level == 'MEDIUM' %}
+                                <span class="badge bg-primary">MEDIUM</span>
+                            {% elif a.threat_level == 'LOW' %}
+                                <span class="badge bg-success">LOW</span>
+                            {% else %}
+                                <span class="badge bg-secondary">—</span>
+                            {% endif %}
+                        </td>
+                        {# Pushbullet status #}
+                        <td class="text-center">
+                            {% set pb = (a.alert_status or '') | upper %}
+                            {% if pb == 'SENT' %}
+                                <span class="badge bg-success">
+                                    <i class="fa-solid fa-check me-1"></i>SENT
+                                </span>
+                            {% elif pb == 'FAILED' %}
+                                <span class="badge bg-danger">
+                                    <i class="fa-solid fa-xmark me-1"></i>FAILED
+                                </span>
+                            {% elif pb == 'NOT_CONFIGURED' %}
+                                <span class="badge bg-secondary">NOT SET</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ pb or '—' }}</span>
+                            {% endif %}
+                        </td>
+                        {# Overall Status (= Pushbullet status, single channel) #}
+                        <td class="text-end pe-3">
+                            {% set overall = (a.alert_status or '') | upper %}
+                            {% if overall == 'SENT' %}
+                                <span class="badge bg-success px-3 py-2">
+                                    <i class="fa-solid fa-circle-check me-1"></i>SENT
+                                </span>
+                            {% elif overall == 'FAILED' %}
+                                <span class="badge bg-danger px-3 py-2">
+                                    <i class="fa-solid fa-circle-xmark me-1"></i>FAILED
+                                </span>
+                            {% elif overall == 'NOT_CONFIGURED' %}
+                                <span class="badge bg-secondary px-3 py-2">
+                                    <i class="fa-solid fa-circle-minus me-1"></i>NOT CONFIGURED
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary px-3 py-2">{{ overall or '—' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-5 font-monospace">
+                            <i class="fa-solid fa-bell-slash fa-2x mb-3 opacity-50"></i>
+                            <p class="mb-0 mt-2">
+                                {% if status_filter == 'FAILED' %}
+                                    No failed alerts found.
+                                {% elif status_filter == 'SENT' %}
+                                    No sent alerts found.
+                                {% elif status_filter == 'NOT_CONFIGURED' %}
+                                    No unconfigured alerts found.
+                                {% else %}
+                                    No alerts have been recorded yet.
+                                {% endif %}
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

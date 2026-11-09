@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-white border-bottom border-secondary pb-2">
+            <i class="bi bi-speedometer2 text-primary"></i> Live Command Center
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Live Camera Feed & Live Telemetry Panel -->
+    <div class="col-lg-8 mb-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="card-title text-white mb-0"><i class="bi bi-camera-video text-danger"></i> Live Feed</h5>
+                <span id="camera-badge" class="badge bg-secondary">Loading...</span>
+            </div>
+            <div class="card-body p-0 position-relative bg-black" style="min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                <img id="video-stream" src="{{ url_for('video_feed') }}" class="img-fluid w-100" alt="Live Camera Feed" style="object-fit: contain;">
+                <div id="offline-overlay" class="position-absolute w-100 h-100 d-none flex-column align-items-center justify-content-center bg-dark text-white" style="top: 0; left: 0; z-index: 10;">
+                    <i class="bi bi-camera-video-off text-danger" style="font-size: 3rem;"></i>
+                    <h4 class="mt-2">CAMERA OFFLINE</h4>
+                    <p class="text-muted">Attempting to reconnect...</p>
+                </div>
+            </div>
+            <div class="card-footer border-secondary text-white-50">
+                <small>System Status: <span id="system-status-text" class="text-success">ONLINE</span></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Telemetry Side Panel -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-dark border-secondary h-100">
+            <div class="card-header border-secondary">
+                <h5 class="card-title text-white mb-0"><i class="bi bi-broadcast"></i> Live Detection</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small">Current Detection</h6>
+                    <h3 id="live-activity" class="text-white fw-bold">SCANNING</h3>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small">Confidence</h6>
+                    <h3 id="live-confidence" class="text-info fw-bold">--%</h3>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small">Threat Score (Security Risk Estimate)</h6>
+                    <div class="d-flex align-items-center">
+                        <h2 id="live-threat-score" class="text-white fw-bold mb-0 me-3">--/100</h2>
+                    </div>
+                    <div class="progress mt-2" style="height: 10px; background-color: #333;">
+                        <div id="threat-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <h6 class="text-muted text-uppercase small">Threat Level</h6>
+                    <h3 id="live-threat-level" class="badge bg-secondary fs-5 p-2 w-100">--</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lifetime Statistics Row -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark border-secondary text-center h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Total Detections</h6>
+                <h2 class="text-white mb-0">{{ stats.total_detections|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark border-secondary text-center h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Total Weapon Detections</h6>
+                <h2 class="text-warning mb-0">{{ stats.total_weapon_detections|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark border-secondary text-center h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">High-Risk Events</h6>
+                <h2 class="text-danger mb-0">{{ stats.high_risk_events|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark border-secondary text-center h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Alerts Sent</h6>
+                <h2 class="text-info mb-0">{{ stats.alerts_sent|default(0) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Incidents Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="card-title text-white mb-0"><i class="bi bi-clock-history"></i> Recent Incidents</h5>
+                <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-primary">View Full History</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead>
+                            <tr class="text-muted">
+                                <th>Date/Time</th>
+                                <th>Activity</th>
+                                <th>Confidence</th>
+                                <th>Threat Score</th>
+                                <th>Threat Level</th>
+                                <th class="text-end">Evidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inc in recent_incidents %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">{{ inc.date }}</div>
+                                    <small class="text-muted">{{ inc.time }}</small>
+                                </td>
+                                <td>{{ inc.activity }}</td>
+                                <td>{{ (inc.confidence * 100)|int }}%</td>
+                                <td>
+                                    <span class="fw-bold">{{ inc.threat_score }}/100</span>
+                                </td>
+                                <td>
+                                    {% if inc.threat_level == 'CRITICAL' %}
+                                        <span class="badge bg-danger">CRITICAL</span>
+                                    {% elif inc.threat_level == 'HIGH' %}
+                                        <span class="badge bg-warning text-dark">HIGH</span>
+                                    {% elif inc.threat_level == 'MEDIUM' %}
+                                        <span class="badge bg-primary">MEDIUM</span>
+                                    {% else %}
+                                        <span class="badge bg-success">LOW</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if inc.screenshot_path %}
+                                    <a href="/{{ inc.screenshot_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-image"></i> View
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted small">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">No recent incidents recorded.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateTelemetry() {
+        fetch('/api/live_status')
+            .then(res => res.json())
+            .then(data => {
+                const threat = data.threat || {};
+                const score = threat.threat_score || 0;
+                document.getElementById('live-threat-score').innerText = `${score}/100`;
+                const pb = document.getElementById('threat-progress-bar');
+                pb.style.width = `${score}%`;
+                
+                const levelEl = document.getElementById('live-threat-level');
+                const level = threat.threat_level || 'LOW';
+                levelEl.innerText = level;
+                levelEl.className = 'badge fs-5 p-2 w-100 ';
+                pb.className = 'progress-bar ';
+                if(level === 'CRITICAL') { levelEl.className += 'bg-danger'; pb.className += 'bg-danger'; }
+                else if(level === 'HIGH') { levelEl.className += 'bg-warning text-dark'; pb.className += 'bg-warning'; }
+                else if(level === 'MEDIUM') { levelEl.className += 'bg-primary'; pb.className += 'bg-primary'; }
+                else { levelEl.className += 'bg-success'; pb.className += 'bg-success'; }
+
+                if(data.total_weapons > 0) {
+                    document.getElementById('live-activity').innerText = 'WEAPON';
+                    document.getElementById('live-activity').className = 'text-danger fw-bold';
+                } else if(data.total_persons > 0) {
+                    document.getElementById('live-activity').innerText = 'PERSON';
+                    document.getElementById('live-activity').className = 'text-info fw-bold';
+                } else {
+                    document.getElementById('live-activity').innerText = 'NONE';
+                    document.getElementById('live-activity').className = 'text-muted fw-bold';
+                }
+                
+                const conf = (threat.confidence || 0) * 100;
+                document.getElementById('live-confidence').innerText = `${Math.round(conf)}%`;
+
+                const cb = document.getElementById('camera-badge');
+                const overlay = document.getElementById('offline-overlay');
+                if(data.camera && data.camera.online) {
+                    cb.innerText = 'ONLINE';
+                    cb.className = 'badge bg-success';
+                    overlay.classList.add('d-none');
+                    overlay.classList.remove('d-flex');
+                } else {
+                    cb.innerText = 'OFFLINE';
+                    cb.className = 'badge bg-danger';
+                    overlay.classList.remove('d-none');
+                    overlay.classList.add('d-flex');
+                }
+            })
+            .catch(err => console.error(err));
+    }
+    
+    setInterval(updateTelemetry, 1000);
+    updateTelemetry();
+</script>
+{% endblock %}

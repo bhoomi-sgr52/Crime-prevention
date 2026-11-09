@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Register | Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-5">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+    <div class="text-center mb-4">
+      <span class="display-6 text-info"><i class="fa-solid fa-user-plus"></i></span>
+      <h3 class="fw-bold brand-font text-light mt-2 mb-0">OPERATOR REGISTRATION</h3>
+      <p class="text-secondary small font-monospace">Create a surveillance team account</p>
+    </div>
+
+    <div class="card border-secondary border-opacity-50 shadow-lg" style="background:#0d1117;">
+      <div class="card-body p-4">
+
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label for="username" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-user me-1 text-info"></i>Username <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control bg-dark border-secondary text-light font-monospace"
+                     id="username" name="username" placeholder="e.g. officer_jones" required
+                     value="{{ form_data.get('username','') }}">
+            </div>
+
+            <div class="col-md-6">
+              <label for="full_name" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-id-card me-1 text-info"></i>Full Name
+              </label>
+              <input type="text" class="form-control bg-dark border-secondary text-light"
+                     id="full_name" name="full_name" placeholder="Officer J. Jones"
+                     value="{{ form_data.get('full_name','') }}">
+            </div>
+
+            <div class="col-12">
+              <label for="email" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-envelope me-1 text-info"></i>Email Address <span class="text-danger">*</span>
+              </label>
+              <input type="email" class="form-control bg-dark border-secondary text-light font-monospace"
+                     id="email" name="email" placeholder="jones@surveillance.local" required
+                     value="{{ form_data.get('email','') }}">
+            </div>
+
+            <div class="col-12">
+              <label for="role" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-shield me-1 text-info"></i>Access Role <span class="text-danger">*</span>
+              </label>
+              <select class="form-select bg-dark border-secondary text-light" id="role" name="role">
+                <option value="security" {{ 'selected' if form_data.get('role','security')=='security' }}>
+                  Security — Dashboard, History, Alerts
+                </option>
+                <option value="admin" {{ 'selected' if form_data.get('role')=='admin' }}>
+                  Admin — Full Access incl. Reports and System Config
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="password" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-lock me-1 text-info"></i>Password <span class="text-danger">*</span>
+              </label>
+              <input type="password" class="form-control bg-dark border-secondary text-light font-monospace"
+                     id="password" name="password" placeholder="Min 6 characters" required
+                     minlength="6">
+              <div class="form-text text-secondary small">At least 6 characters.</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="confirm_password" class="form-label text-light small fw-semibold">
+                <i class="fa-solid fa-shield-check me-1 text-info"></i>Confirm Password <span class="text-danger">*</span>
+              </label>
+              <input type="password" class="form-control bg-dark border-secondary text-light font-monospace"
+                     id="confirm_password" name="confirm_password" placeholder="Repeat password" required>
+            </div>
+
+          </div>
+
+          <div class="mt-4 p-3 rounded border border-warning border-opacity-25"
+               style="background:rgba(255,193,7,.05);">
+            <p class="small text-warning mb-0">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+              Passwords are stored with industry-standard hashing. Plain-text passwords are never saved.
+            </p>
+          </div>
+
+          <button type="submit" class="btn btn-info w-100 py-2 fw-semibold text-dark mt-4">
+            <i class="fa-solid fa-user-check me-2"></i>Create Account
+          </button>
+        </form>
+
+      </div>
+      <div class="card-footer bg-transparent border-top border-secondary border-opacity-25 text-center py-3">
+        <span class="text-secondary small">
+          Already registered?
+          <a href="{{ url_for('auth.login') }}" class="text-info fw-semibold text-decoration-none">Sign in</a>
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

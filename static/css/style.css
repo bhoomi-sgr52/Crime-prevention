@@ -1,0 +1,245 @@
+/* =========================================================
+   SENTINEL WATCH: AI Surveillance & Crime Prevention CSS
+   Tactical Surveillance Command Center Dark Theme
+   ========================================================= */
+
+:root {
+    --bg-darkest: #070b12;
+    --bg-hud: #0e1626;
+    --bg-card: #131f33;
+    --bg-card-hover: #192a45;
+    --border-hud: rgba(56, 189, 248, 0.15);
+    --border-light: rgba(255, 255, 255, 0.1);
+    
+    /* Threat Colors */
+    --threat-low: #10b981;
+    --threat-med: #f59e0b;
+    --threat-high: #ea580c;
+    --threat-crit: #ef4444;
+
+    /* Accent & Brand */
+    --accent-cyan: #38bdf8;
+    --accent-blue: #0284c7;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+}
+
+body.bg-dark-surveillance {
+    background-color: var(--bg-darkest);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Typography */
+.brand-font {
+    font-family: 'Chakra Petch', sans-serif;
+    letter-spacing: 0.05em;
+}
+
+.font-monospace {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+.smaller {
+    font-size: 0.72rem;
+}
+
+/* Cards & Surfaces */
+.bg-hud {
+    background-color: var(--bg-hud) !important;
+    backdrop-filter: blur(10px);
+}
+
+.card {
+    border-radius: 6px;
+}
+
+/* Live Indicators */
+.live-pulse {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    margin-right: 4px;
+    box-shadow: 0 0 8px #ef4444;
+    animation: pulse 1.2s infinite ease-in-out;
+}
+
+.status-dot-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+    animation: pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.6; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.6; }
+}
+
+/* Video Viewport Container */
+.video-container {
+    background-color: #000;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+}
+
+.surveillance-stream {
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    display: block;
+}
+
+/* HUD Overlays on Video */
+.hud-overlay {
+    position: absolute;
+    z-index: 10;
+    pointer-events: none;
+    background: rgba(7, 11, 18, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+.hud-top-left {
+    top: 10px;
+    left: 10px;
+    text-align: left;
+}
+
+.hud-top-right {
+    top: 10px;
+    right: 10px;
+}
+
+.hud-bottom-left {
+    bottom: 10px;
+    left: 10px;
+    text-align: left;
+}
+
+.hud-bottom-right {
+    bottom: 10px;
+    right: 10px;
+}
+
+.hud-item {
+    line-height: 1.25;
+}
+
+/* Threat Badge Styles */
+.badge-tactical {
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    border: 1px solid transparent;
+}
+
+.badge-low {
+    background-color: rgba(16, 185, 129, 0.25);
+    color: var(--threat-low);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.badge-med {
+    background-color: rgba(245, 158, 11, 0.25);
+    color: var(--threat-med);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.badge-high {
+    background-color: rgba(234, 88, 12, 0.25);
+    color: var(--threat-high);
+    border-color: rgba(234, 88, 12, 0.5);
+}
+
+.badge-crit {
+    background-color: rgba(239, 68, 68, 0.3);
+    color: var(--threat-crit);
+    border-color: rgba(239, 68, 68, 0.8);
+    animation: pulse-crit 1s infinite alternate;
+}
+
+@keyframes pulse-crit {
+    from { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
+    to { box-shadow: 0 0 16px rgba(239, 68, 68, 0.9); }
+}
+
+/* Threat Gauge / Meter Box */
+.threat-meter-box {
+    background: radial-gradient(circle, rgba(14, 22, 38, 0.9) 0%, rgba(7, 11, 18, 0.95) 100%);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px 0;
+}
+
+.tier-pill {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    opacity: 0.4;
+    transition: all 0.2s ease;
+}
+
+.tier-pill.active {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.tier-low.active { background: rgba(16, 185, 129, 0.2); border-color: var(--threat-low); color: var(--threat-low); }
+.tier-med.active { background: rgba(245, 158, 11, 0.2); border-color: var(--threat-med); color: var(--threat-med); }
+.tier-high.active { background: rgba(234, 88, 12, 0.2); border-color: var(--threat-high); color: var(--threat-high); }
+.tier-crit.active { background: rgba(239, 68, 68, 0.25); border-color: var(--threat-crit); color: var(--threat-crit); }
+
+/* Color classes */
+.bg-orange {
+    background-color: #ea580c !important;
+    color: #ffffff;
+}
+
+/* Custom Scrollbar for Alert Feed */
+#liveAlertsFeed::-webkit-scrollbar {
+    width: 6px;
+}
+
+#liveAlertsFeed::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#liveAlertsFeed::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+/* Auth Cards */
+.auth-card {
+    border-radius: 8px;
+}
+
+.auth-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 50%;
+}

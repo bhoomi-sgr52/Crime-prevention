@@ -1,0 +1,54 @@
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables and secrets
+.env
+.env.*
+*.env
+!.env.example
+.env.local
+
+# Database files
+database/*.db
+database/*.sqlite3
+
+# Screenshots
+screenshots/*.jpg
+screenshots/*.jpeg
+screenshots/*.png
+
+# Generated reports
+reports/*.pdf
+
+# Log files
+logs/*.log
+
+# YOLO model weights
+*.pt
+
+# YOLO training outputs
+runs/
+
+# Dataset files
+dataset/
+
+# Python testing and analysis cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

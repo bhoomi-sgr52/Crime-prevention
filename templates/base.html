@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sentinel Watch - AI Crime Prevention & Surveillance{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Custom Tactical Surveillance Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-dark-surveillance text-light">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-hud border-bottom border-secondary border-opacity-25 sticky-top">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 brand-font" href="{{ url_for('dashboard') if session.get('user_id') else url_for('auth.login') }}">
+                <span class="brand-shield text-info"><i class="fa-solid fa-shield-halved fa-lg"></i></span>
+                <div>
+                    <span class="fw-bold tracking-wide text-light">SENTINEL</span><span class="fw-bold text-info">WATCH</span>
+                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50 ms-2 live-badge">
+                        <span class="live-pulse"></span> LIVE
+                    </span>
+                </div>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                {% if session.get('user_id') %}
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active text-info fw-semibold' if request.endpoint == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}">
+                            <i class="fa-solid fa-gauge-high me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active text-info fw-semibold' if request.endpoint == 'history' else '' }}" href="{{ url_for('history') }}">
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i> History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active text-info fw-semibold' if request.endpoint == 'alerts' else '' }}" href="{{ url_for('alerts') }}">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Alerts
+                            <span id="navAlertBadge" class="badge bg-danger rounded-pill ms-1 d-none">0</span>
+                        </a>
+                    </li>
+                    {% if session.get('role') == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link px-3 {{ 'active text-info fw-semibold' if request.endpoint == 'reports_view' else '' }}" href="{{ url_for('reports_view') }}">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Reports
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    <!-- ── Camera Stream Status (clickable dropdown) ── -->
+                    <div class="dropdown d-none d-xl-flex">
+                        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 py-1 px-2 border-secondary"
+                                type="button" id="camStatusDropBtn"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                title="Camera stream status — click for details">
+                            <!-- Dot indicator -->
+                            <span id="camStatusDot" class="rounded-circle d-inline-block"
+                                  style="width:8px;height:8px;background:#6c757d;flex-shrink:0;"></span>
+                            <span id="navCameraStatusText"
+                                  class="small font-monospace text-secondary">
+                                Checking Stream...
+                            </span>
+                        </button>
+
+                        <!-- Dropdown panel -->
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary p-0"
+                             style="min-width:280px;" aria-labelledby="camStatusDropBtn">
+                            <div class="px-3 py-2 border-bottom border-secondary">
+                                <span class="fw-semibold text-light small text-uppercase font-monospace">
+                                    <i class="fa-solid fa-video me-1 text-info"></i> Camera Stream
+                                </span>
+                            </div>
+                            <div class="px-3 py-2">
+                                <table class="table table-dark table-sm mb-0 small font-monospace" style="font-size:0.78rem;">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Status</td>
+                                            <td id="camPanelStatus" class="border-0 py-1 fw-bold">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Source</td>
+                                            <td id="camPanelSource" class="border-0 py-1">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Stream FPS</td>
+                                            <td id="camPanelFps" class="border-0 py-1">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Last Frame</td>
+                                            <td id="camPanelLastSeen" class="border-0 py-1">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Frames Total</td>
+                                            <td id="camPanelFrames" class="border-0 py-1">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Reconnects</td>
+                                            <td id="camPanelReconnects" class="border-0 py-1">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-secondary border-0 py-1">Detail</td>
+                                            <td id="camPanelMsg" class="border-0 py-1 text-secondary" style="word-break:break-word;">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="px-3 pb-2 pt-1 border-top border-secondary d-flex gap-2">
+                                <a href="{{ url_for('dashboard') }}"
+                                   class="btn btn-xs btn-outline-info font-monospace py-1 px-2 flex-fill text-center"
+                                   style="font-size:0.74rem;">
+                                    <i class="fa-solid fa-gauge-high me-1"></i>Dashboard
+                                </a>
+                                <button type="button" id="camRefreshBtn"
+                                        class="btn btn-xs btn-outline-secondary font-monospace py-1 px-2"
+                                        style="font-size:0.74rem;" title="Refresh now">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ── end camera status ── -->
+
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 py-1 px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-user-shield text-info"></i>
+                            <span class="small fw-medium">{{ session.get('full_name', session.get('username')) }}</span>
+                            <span class="badge bg-secondary text-uppercase ms-1" style="font-size: 0.65rem;">{{ session.get('role', 'officer') }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary">
+                            <li><a class="dropdown-item py-2" href="{{ url_for('auth.profile') }}"><i class="fa-solid fa-id-badge me-2 text-info"></i>User Profile</a></li>
+                            <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#cameraSettingsModal"><i class="fa-solid fa-video me-2 text-warning"></i>Camera Config</a></li>
+                            <li><hr class="dropdown-divider border-secondary"></li>
+                            <li><a class="dropdown-item py-2 text-danger" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% else %}
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('auth.login') }}"><i class="fa-solid fa-lock me-1"></i> Sign In</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-info btn-sm px-3 text-dark fw-semibold" href="{{ url_for('auth.register') }}"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Camera Settings Modal (Accessible anywhere) -->
+    {% if session.get('user_id') %}
+    <div class="modal fade" id="cameraSettingsModal" tabindex="-1" aria-labelledby="cameraSettingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-hud border border-secondary">
+                <div class="modal-header border-bottom border-secondary border-opacity-50">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="cameraSettingsModalLabel">
+                        <i class="fa-solid fa-video text-warning"></i> Camera Stream Configuration
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="cameraConfigForm" action="{{ url_for('api_update_camera') }}" method="POST">
+                    <div class="modal-body">
+                        <p class="text-secondary small mb-3">
+                            Connect one Android smartphone acting as an IP camera on the local Wi-Fi.
+                            Example: <code>http://192.168.1.100:8080/video</code> (IP Webcam app) or <code>0</code> for laptop webcam.
+                        </p>
+                        <div class="mb-3">
+                            <label for="camera_url" class="form-label text-light fw-medium small">Stream URL or Device Index</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="fa-solid fa-link"></i></span>
+                                <input type="text" class="form-control bg-dark border-secondary text-light font-monospace" id="modalCameraUrl" name="camera_url" required placeholder="http://192.168.1.xxx:8080/video">
+                            </div>
+                        </div>
+                        <div id="cameraModalFeedback" class="small mt-2"></div>
+                    </div>
+                    <div class="modal-footer border-top border-secondary border-opacity-50">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning btn-sm fw-semibold" id="btnSaveCameraUrl">
+                            <i class="fa-solid fa-check me-1"></i> Update & Reconnect
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages Container -->
+    <div class="container-fluid px-3 px-lg-4 mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show border-0 shadow-sm d-flex align-items-center gap-2" role="alert">
+                        <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-triangle-exclamation{% elif category == 'warning' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Injection -->
+    <main class="container-fluid px-3 px-lg-4 py-3 flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Tactical Footer -->
+    <footer class="footer mt-auto py-3 bg-hud border-top border-secondary border-opacity-25 text-secondary">
+        <div class="container-fluid px-3 px-lg-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small">
+            <div class="d-flex align-items-center gap-2 font-monospace">
+                <span class="text-info fw-semibold">SENTINEL WATCH v2.6</span>
+                <span class="text-secondary">|</span>
+                <span>Automated Early-Threat Surveillance System</span>
+            </div>
+            <div class="text-secondary text-center text-md-end">
+                <span>Decision Support & Early Warning Only &bull; Human Verification Required</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% if session.get('user_id') %}
+    <!-- ── Camera Stream Status Poller ───────────────────────────────────── -->
+    <script>
+    (function () {
+        "use strict";
+
+        var dot       = document.getElementById("camStatusDot");
+        var label     = document.getElementById("navCameraStatusText");
+        var pStatus   = document.getElementById("camPanelStatus");
+        var pSource   = document.getElementById("camPanelSource");
+        var pFps      = document.getElementById("camPanelFps");
+        var pLastSeen = document.getElementById("camPanelLastSeen");
+        var pFrames   = document.getElementById("camPanelFrames");
+        var pRecon    = document.getElementById("camPanelReconnects");
+        var pMsg      = document.getElementById("camPanelMsg");
+        var refreshBtn= document.getElementById("camRefreshBtn");
+
+        // Colours
+        var C_LIVE    = "#22c55e";  // green-500
+        var C_CONN    = "#eab308";  // yellow-500
+        var C_OFFLINE = "#ef4444";  // red-500
+        var C_UNKNOWN = "#6c757d";  // grey
+
+        function friendlySource(url) {
+            if (!url) return "Unknown";
+            // Avoid leaking full IP — just describe the type
+            if (/^\d+$/.test(url))         return "Webcam (local device)";
+            if (/rtsp:\/\//i.test(url))    return "RTSP Camera";
+            if (/8080/i.test(url))         return "Phone Camera (IP Webcam)";
+            if (/http:\/\//i.test(url))    return "IP Camera (HTTP)";
+            return "Camera Stream";
+        }
+
+        function applyState(data) {
+            var cam = (data && data.camera) ? data.camera : null;
+            if (!cam) {
+                dot.style.background = C_UNKNOWN;
+                label.textContent    = "Checking Stream...";
+                label.className      = "small font-monospace text-secondary";
+                if (pStatus) pStatus.textContent = "Unknown";
+                return;
+            }
+
+            var online  = cam.online === true;
+            var msg     = (cam.status_message || "").toLowerCase();
+            var connecting = !online && (msg.indexOf("connect") !== -1
+                                      || msg.indexOf("retry") !== -1
+                                      || msg.indexOf("switch") !== -1
+                                      || msg.indexOf("stall") !== -1);
+
+            if (online) {
+                dot.style.background = C_LIVE;
+                label.textContent    = "\u{1F7E2} LIVE";
+                label.className      = "small font-monospace text-success fw-semibold";
+            } else if (connecting) {
+                dot.style.background = C_CONN;
+                label.textContent    = "\u{1F7E1} CONNECTING...";
+                label.className      = "small font-monospace text-warning";
+            } else {
+                dot.style.background = C_OFFLINE;
+                label.textContent    = "\u{1F534} OFFLINE";
+                label.className      = "small font-monospace text-danger";
+            }
+
+            // ── Panel rows ────────────────────────────────────────────────────
+            if (pStatus) {
+                if (online) {
+                    pStatus.innerHTML = "<span class='text-success'>\u{1F7E2} LIVE</span>";
+                } else if (connecting) {
+                    pStatus.innerHTML = "<span class='text-warning'>\u{1F7E1} CONNECTING...</span>";
+                } else {
+                    pStatus.innerHTML = "<span class='text-danger'>\u{1F534} OFFLINE</span>";
+                    // Friendly panel message
+                }
+            }
+            if (pSource)   pSource.textContent   = friendlySource(cam.url);
+            if (pFps)      pFps.textContent       = online ? (cam.fps || 0) + " fps" : "—";
+            if (pLastSeen) pLastSeen.textContent  = cam.last_seen || "Never";
+            if (pFrames)   pFrames.textContent    = (cam.frames_captured || 0).toLocaleString();
+            if (pRecon)    pRecon.textContent      = cam.reconnect_count || 0;
+            if (pMsg) {
+                if (online) {
+                    pMsg.textContent = "Stream is live.";
+                    pMsg.className   = "border-0 py-1 text-success";
+                } else if (connecting) {
+                    pMsg.textContent = "Attempting to reconnect to the phone camera...";
+                    pMsg.className   = "border-0 py-1 text-warning";
+                } else {
+                    pMsg.textContent = "Camera stream is currently offline.";
+                    pMsg.className   = "border-0 py-1 text-danger";
+                }
+            }
+        }
+
+        function poll() {
+            fetch("/api/live_status", { cache: "no-store" })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) { applyState(d); })
+                .catch(function () {
+                    // Network error — show unknown
+                    if (dot) dot.style.background = C_UNKNOWN;
+                    if (label) { label.textContent = "Checking..."; label.className = "small font-monospace text-secondary"; }
+                });
+        }
+
+        // Initial poll immediately on page load
+        poll();
+        // Then every 3 seconds
+        setInterval(poll, 3000);
+
+        // Manual refresh button inside the panel
+        if (refreshBtn) {
+            refreshBtn.addEventListener("click", function (e) {
+                e.stopPropagation();   // don't close the dropdown
+                poll();
+            });
+        }
+    })();
+    </script>
+    {% endif %}
+
+    <!-- Custom Scripts -->
+    {% block extra_js %}{% endblock %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

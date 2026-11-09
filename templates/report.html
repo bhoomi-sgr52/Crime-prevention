@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Surveillance PDF Reports | Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold tracking-wide brand-font text-light mb-1">
+            <i class="fa-solid fa-file-pdf text-info me-2"></i>INCIDENT REPORT GENERATION &amp; ARCHIVE
+        </h4>
+        <p class="text-secondary small mb-0 font-monospace">Formal PDF Documentation for Security Review and Law Enforcement Reference</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-secondary font-monospace">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Incident History
+        </a>
+    </div>
+</div>
+
+{# ── Flash messages ───────────────────────────────────────────────────────── #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'danger' else ('warning' if category == 'warning' else 'info') }} alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-{{ 'triangle-exclamation' if category in ('danger','warning') else 'circle-info' }} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row g-4">
+
+    {# ══════════════════════════════════════════════════════════════════════
+       LEFT COLUMN — Activity-Based Report Generator
+       ══════════════════════════════════════════════════════════════════════ #}
+    <div class="col-12 col-lg-7">
+
+        {# ── Activity Selector Card ──────────────────────────────────────── #}
+        <div class="card bg-hud border-secondary border-opacity-50 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-bottom border-secondary border-opacity-25 py-3">
+                <span class="fw-bold text-light font-monospace">
+                    <i class="fa-solid fa-magnifying-glass-chart text-info me-2"></i>Generate Report by Activity
+                </span>
+            </div>
+            <div class="card-body p-4">
+
+                {% if activities %}
+                <form method="POST" action="{{ url_for('download_activity_pdf') }}" id="activityReportForm">
+                    <div class="mb-3">
+                        <label for="activitySelect" class="form-label text-secondary font-monospace small text-uppercase">
+                            Select Activity
+                        </label>
+                        <select name="activity" id="activitySelect"
+                                class="form-select bg-black text-white border-secondary font-monospace"
+                                required>
+                            <option value="" disabled {% if not selected_activity %}selected{% endif %}>
+                                — Select an activity —
+                            </option>
+                            {% for act in activities %}
+                            <option value="{{ act }}"
+                                {% if selected_activity == act %}selected{% endif %}>
+                                {{ act }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-secondary font-monospace small mt-1">
+                            {{ activities|length }} distinct activit{{ 'y' if activities|length == 1 else 'ies' }} found in the database.
+                        </div>
+                    </div>
+
+                    {# Preview: show count for the currently selected activity if passed via ?activity= #}
+                    {% if selected_activity %}
+                    <div class="alert alert-secondary border-secondary py-2 mb-3 font-monospace small">
+                        <i class="fa-solid fa-circle-info text-info me-1"></i>
+                        Selected: <strong class="text-light">{{ selected_activity }}</strong>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-3 align-items-center">
+                        <button type="submit" class="btn btn-info fw-bold text-dark flex-fill py-2 shadow-sm font-monospace">
+                            <i class="fa-solid fa-file-arrow-down me-2"></i>Download Report (PDF)
+                        </button>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                        <p class="text-secondary small font-monospace mb-0">
+                            <i class="fa-solid fa-circle-info text-warning me-1"></i>
+                            The PDF will contain <strong>all detection records</strong> for the selected activity,
+                            including evidence screenshots, threat scores, and alert statuses.
+                        </p>
+                    </div>
+                </form>
+
+                {% else %}
+                {# No detections in DB yet #}
+                <div class="text-center py-4 text-secondary font-monospace">
+                    <i class="fa-solid fa-database fa-2x mb-3 opacity-50"></i>
+                    <div class="mb-2 fw-semibold text-light">No detection records found.</div>
+                    <p class="small mb-3">
+                        Reports can be generated once SentinelWatch has detected and logged
+                        at least one security threat. Run the camera feed to start capturing events.
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-info font-monospace">
+                        <i class="fa-solid fa-gauge-high me-1"></i> Go to Dashboard
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        {# ── Per-Incident Card (shown when /reports/<id> is used) ─────────── #}
+        {% if selected_incident %}
+        <div class="card bg-hud border-secondary border-opacity-50 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-bottom border-secondary border-opacity-25 py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light font-monospace">
+                    <i class="fa-solid fa-file-lines text-info me-2"></i>Selected Incident #{{ "%05d" % selected_incident.id }}
+                </span>
+                <span class="badge {% if selected_incident.threat_level == 'CRITICAL' %}bg-danger{% elif selected_incident.threat_level == 'HIGH' %}bg-warning text-dark{% elif selected_incident.threat_level == 'MEDIUM' %}bg-primary{% else %}bg-success{% endif %} font-monospace">
+                    {{ selected_incident.threat_level }} ({{ selected_incident.threat_score }}/100)
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-sm-6">
+                        <div class="text-secondary font-monospace small">INCIDENT TIMESTAMP</div>
+                        <div class="text-light fw-medium">{{ selected_incident.date }} {{ selected_incident.time }}</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="text-secondary font-monospace small">ACTIVITY OBSERVED</div>
+                        <div class="text-light fw-medium">{{ selected_incident.activity }}</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="text-secondary font-monospace small">AI CONFIDENCE SCORE</div>
+                        <div class="text-info fw-bold">{{ (selected_incident.confidence * 100) | round(1) }}%</div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="text-secondary font-monospace small">THREAT LEVEL</div>
+                        <div class="text-uppercase text-light fw-bold">{{ selected_incident.threat_level }}</div>
+                    </div>
+                </div>
+
+                {% if selected_incident.screenshot_path %}
+                <div class="text-center mb-4 bg-black rounded p-2 border border-secondary border-opacity-50">
+                    <img src="/{{ selected_incident.screenshot_path }}" alt="Evidence Snapshot" class="img-fluid rounded" style="max-height: 240px;">
+                    <div class="font-monospace small text-secondary mt-1">Surveillance Evidence Capture</div>
+                </div>
+                {% endif %}
+
+                <div class="p-3 bg-dark bg-opacity-50 rounded border border-secondary border-opacity-25 mb-4">
+                    <div class="d-flex align-items-center gap-2 text-warning small mb-1">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                        <span class="fw-semibold">Automated Decision-Support Notice &amp; Potential Security Risk Estimate:</span>
+                    </div>
+                    <p class="small text-secondary mb-0 font-monospace">
+                        PDF generated via Sentinel Watch incorporates formal legal disclaimers stating that all threat metrics represent
+                        a system-generated Potential Security Risk Estimate and automated probability indicators and must be verified
+                        by licensed personnel prior to action.
+                    </p>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('download_incident_pdf', incident_id=selected_incident.id) }}"
+                       class="btn btn-info fw-bold text-dark flex-fill py-2 shadow-sm font-monospace">
+                        <i class="fa-solid fa-file-arrow-down me-2"></i>Generate &amp; Download Official PDF Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>{# /col-lg-7 #}
+
+    {# ══════════════════════════════════════════════════════════════════════
+       RIGHT COLUMN — Generated PDF Archive
+       ══════════════════════════════════════════════════════════════════════ #}
+    <div class="col-12 col-lg-5">
+        <div class="card bg-hud border-secondary border-opacity-50 shadow-sm">
+            <div class="card-header bg-transparent border-bottom border-secondary border-opacity-25 py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-light font-monospace">
+                    <i class="fa-solid fa-folder-open text-warning me-2"></i>Generated PDF Archive
+                </span>
+                <span class="badge bg-secondary font-monospace">{{ generated_reports|length }} Files</span>
+            </div>
+            <div class="card-body p-3">
+                {% if generated_reports %}
+                <ul class="list-group list-group-flush bg-transparent">
+                    {% for report in generated_reports %}
+                    <li class="list-group-item bg-transparent border-secondary border-opacity-25 px-0 py-2 d-flex justify-content-between align-items-center">
+                        <div class="overflow-hidden me-2">
+                            <i class="fa-solid fa-file-pdf text-danger me-2"></i>
+                            <span class="font-monospace small text-light text-truncate d-inline-block"
+                                  style="max-width: 220px;" title="{{ report.name }}">
+                                {{ report.name }}
+                            </span>
+                            <div class="smaller text-secondary font-monospace">
+                                {{ report.size_kb }} KB &bull; {{ report.modified }}
+                            </div>
+                        </div>
+                        <a href="/reports/{{ report.name }}" target="_blank"
+                           class="btn btn-xs btn-outline-info font-monospace py-1 px-2" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-download me-1"></i>Open
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-4 text-secondary font-monospace small">
+                    <i class="fa-solid fa-inbox fa-2x mb-2 text-secondary opacity-50"></i>
+                    <div>No PDF reports generated yet.</div>
+                    <div class="mt-1 opacity-75">Select an activity and click Download Report.</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>{# /col-lg-5 #}
+
+</div>{# /row #}
+{% endblock %}

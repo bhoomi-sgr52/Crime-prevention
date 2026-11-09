@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}History - Sentinel Watch{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="text-white border-bottom border-secondary pb-2">
+            <i class="bi bi-clock-history text-primary"></i> Detection History
+        </h2>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card bg-dark border-secondary mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('history') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small text-uppercase">Search</label>
+                <input type="text" name="search" class="form-control bg-black text-white border-secondary" placeholder="Search activity or objects..." value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small text-uppercase">Threat Level</label>
+                <select name="threat_level" class="form-select bg-black text-white border-secondary">
+                    <option value="ALL" {% if request.args.get('threat_level') == 'ALL' %}selected{% endif %}>All Levels</option>
+                    <option value="CRITICAL" {% if request.args.get('threat_level') == 'CRITICAL' %}selected{% endif %}>Critical Only</option>
+                    <option value="HIGH" {% if request.args.get('threat_level') == 'HIGH' %}selected{% endif %}>High Only</option>
+                    <option value="MEDIUM" {% if request.args.get('threat_level') == 'MEDIUM' %}selected{% endif %}>Medium Only</option>
+                    <option value="LOW" {% if request.args.get('threat_level') == 'LOW' %}selected{% endif %}>Low Only</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <!-- Activity and Date filters are combined with search dynamically in backend or can be expanded if needed -->
+                <p class="text-muted small mb-0 mt-3"><i class="bi bi-info-circle"></i> Showing the latest up to 100 detections matching criteria, sorted by newest first.</p>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Apply Filters</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card bg-dark border-secondary">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead>
+                    <tr class="text-muted text-uppercase small">
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Activity</th>
+                        <th>Detected Objects</th>
+                        <th>Confidence</th>
+                        <th>Threat Score</th>
+                        <th>Threat Level</th>
+                        <th class="text-end">Screenshot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inc in incidents %}
+                    <tr>
+                        <td class="fw-bold">{{ inc.date }}</td>
+                        <td class="text-muted">{{ inc.time }}</td>
+                        <td>{{ inc.activity }}</td>
+                        <td>{{ inc.detected_objects }}</td>
+                        <td>{{ (inc.confidence * 100)|int }}%</td>
+                        <td class="fw-bold">{{ inc.threat_score }}/100</td>
+                        <td>
+                            {% if inc.threat_level == 'CRITICAL' %}
+                                <span class="badge bg-danger">CRITICAL</span>
+                            {% elif inc.threat_level == 'HIGH' %}
+                                <span class="badge bg-warning text-dark">HIGH</span>
+                            {% elif inc.threat_level == 'MEDIUM' %}
+                                <span class="badge bg-primary">MEDIUM</span>
+                            {% else %}
+                                <span class="badge bg-success">LOW</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if inc.screenshot_path %}
+                            <a href="/{{ inc.screenshot_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-image"></i> View
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">None</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="bi bi-search" style="font-size: 2rem;"></i>
+                            <p class="mt-2">No detection history found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
